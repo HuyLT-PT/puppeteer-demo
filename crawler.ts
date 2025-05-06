@@ -12,7 +12,9 @@ export type CommentItem = {
 };
 
 async function launchBrowser() {
-  return await puppeteer.launch();
+  return await puppeteer.launch({
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
 }
 
 async function getTotalPages(page: Page, companyName:string): Promise<number> {
