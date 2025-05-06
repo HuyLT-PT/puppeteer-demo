@@ -16,10 +16,10 @@ RUN npm install
 
 COPY . .
 
-RUN npm run build
+# RUN npm run build
 
 # Puppeteer runs best with --no-sandbox in Docker
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 RUN npm install puppeteer
 
-CMD ["node", "dist/server.js"]
+CMD ["npx", "ts-node", "index.ts -y"]

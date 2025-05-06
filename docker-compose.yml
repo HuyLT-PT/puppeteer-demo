@@ -15,7 +15,7 @@ services:
       - .:/app
     command: >
       sh -c "npx prisma migrate deploy &&
-             node dist/server.js"
+             npx ts-node index.ts -y"
     cap_add:
       - SYS_ADMIN 
     shm_size: 1gb
@@ -29,7 +29,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: mydb
     ports:
-      - "5432:5432"
+      - "15432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
 
