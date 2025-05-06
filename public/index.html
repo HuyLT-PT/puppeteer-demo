@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Crawl Comments</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+<body>
+  <div id="app">
+    <h1>🕵️ Crawl Comments</h1>
+    <input v-model="companyName" placeholder="Enter company name" />
+    <button @click="crawl">Crawl</button>
+
+    <p v-if="loading">⏳ Crawling...</p>
+    <p v-if="message">{{ message }}</p>
+    <table v-if="allComment && allComment?.length" border="1" cellpadding="8" cellspacing="0">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Text</th>
+            <th>Type</th>
+            <th>Source ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in allComment" :key="item.id">
+            <td>{{ item.id }}</td>
+            <td>{{ item.text }}</td>
+            <td>{{ item.type }}</td>
+            <td>{{ item.sourceId }}</td>
+          </tr>
+        </tbody>
+    </table>      
+</div>
+
+<script>
+    const { createApp, ref, onMounted, nextTick } = Vue;
+
+    createApp({
+      setup() {
+        const companyName = ref('');
+        const message = ref('');
+        const allComment = ref([]);
+        const loading = ref(false);
+
+        onMounted(() => {
+          console.log('App is mounted!');
+        });
+
+        const crawl = async () => {
+          if (!companyName.value.trim()) {
+            message.value = '⚠️ Please enter a company name.';
+            return;
+          }
+          loading.value = true;
+          message.value = '';
+          try {
+            const res = await fetch(`/crawl-comments/${encodeURIComponent(companyName.value)}`);
+            const data = await res.json();
+            message.value = data.message || '✅ Done!';
+            if (Array.isArray(data.data)) {
+                allComment.value.splice(0, allComment.value.length, ...data.data);
+                nextTick(() => {
+                console.log('DOM updated');
+                console.log(allComment.value.length)
+                });
+            } else {
+            console.error('Dữ liệu trả về không phải mảng!');
+            }
+          } catch (err) {
+            message.value = '❌ Error occurred.';
+          } finally {
+            loading.value = false;
+          }
+        };
+
+        return {
+          companyName,
+          message,
+          loading,
+          allComment,
+          crawl
+        };
+      }
+    }).mount('#app');
+</script>
+</body>
+</html>
