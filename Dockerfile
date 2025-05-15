@@ -22,4 +22,4 @@ COPY . .
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 RUN npm install puppeteer
 
-CMD ["npx", "ts-node", "index.ts -y"]
+CMD ["npm", "run", "start"]
