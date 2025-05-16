@@ -13,12 +13,22 @@ export type CommentItem = {
 
 async function launchBrowser() {
   return await puppeteer.launch({
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--single-process',
+      '--disable-gpu'
+    ],
+    headless: true,
   });
 }
 
 async function getTotalPages(page: Page, companyName:string): Promise<number> {
-  await page.goto(`${domainUrl}/companies/${companyName}`, { waitUntil: 'networkidle0' });
+  await page.goto(`${domainUrl}/companies/${companyName}`, { waitUntil: 'networkidle0', timeout:120000 });
 
   return await page.evaluate(() => {
     const pageLinks = Array.from(document.querySelectorAll('.pagination .page-link'));
@@ -37,7 +47,7 @@ async function getTotalPages(page: Page, companyName:string): Promise<number> {
 
 async function scrapePage(page: Page, pageIndex: number,companyName:string): Promise<CommentItem[]> {
   const url = `${domainUrl}/companies/${companyName}?page=${pageIndex}`;
-  const response = await page.goto(url, { waitUntil: 'networkidle0' });
+  const response = await page.goto(url, { waitUntil: 'networkidle0', timeout:120000 });
 
   if (!response || response.status() >= 400) {
     console.warn(`❌ Page ${url} returned status ${response?.status()}`);
@@ -107,6 +117,15 @@ async function saveToDatabase(comments: CommentItem[],companyName:string) {
 export async function crawlComments(companyName:string)  {
   const browser = await launchBrowser();
   const page = await browser.newPage();
+  await page.setRequestInterception(true);
+  page.on('request', (req) => {
+    if(['image', 'stylesheet', 'font'].includes(req.resourceType())) {
+      req.abort();
+    } else {
+      req.continue();
+    }
+  });
+
   const totalPages = await getTotalPages(page,companyName);
 
   const allComments: CommentItem[] = [];
