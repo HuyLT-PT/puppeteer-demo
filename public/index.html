@@ -10,9 +10,19 @@
     <h1>🕵️ Crawl Comments</h1>
     <input v-model="companyName" placeholder="Enter company name" />
     <button @click="crawl">Crawl</button>
-
+    <label>
+      <input type="checkbox" v-model="autoScrollEnabled" @change="toggleAutoScroll" />
+      🔄 Auto Scroll (Reading Mode)
+    </label>
+    <div style="margin: 10px 0;">
+      <label>
+        🕒 Scroll Speed (ms):
+        <input :disabled="autoScrollEnabled"  type="number" v-model.number="scrollSpeed" min="1" max="50" />
+      </label>
+    </div>    
     <p v-if="loading">⏳ Crawling...</p>
     <p v-if="message">{{ message }}</p>
+    <div ref="scrollContainer" style="max-height: 1000px; overflow-y: auto;">
     <table v-if="allComment && allComment?.length" border="1" cellpadding="8" cellspacing="0">
         <thead>
           <tr>
@@ -30,11 +40,12 @@
             <td>{{ item.sourceId }}</td>
           </tr>
         </tbody>
-    </table>      
+    </table>     
+    </div> 
 </div>
 
 <script>
-    const { createApp, ref, onMounted, nextTick } = Vue;
+    const { createApp, ref, onMounted, nextTick, onUnmounted } = Vue;
 
     createApp({
       setup() {
@@ -43,8 +54,34 @@
         const allComment = ref([]);
         const loading = ref(false);
 
+        const autoScrollEnabled = ref(false);
+        const scrollContainer = ref(null);
+        let scrollInterval = null;
+        const scrollSpeed = ref(50);
         onMounted(() => {
           console.log('App is mounted!');
+        });
+
+        const toggleAutoScroll = () => {
+        const speed = Math.min(Math.min(scrollSpeed.value, 50), 50);
+        if (autoScrollEnabled.value) {
+          scrollInterval = setInterval(() => {
+            const el = scrollContainer.value;
+            if (el) {
+              el.scrollTop += 1; 
+              if (el.scrollTop + el.clientHeight >= el.scrollHeight) {
+                clearInterval(scrollInterval);
+                autoScrollEnabled.value = false;
+              }
+              }
+            }, speed); 
+            } else {
+            clearInterval(scrollInterval);
+          }
+        };
+
+        onUnmounted(() => {
+          clearInterval(scrollInterval);
         });
 
         const crawl = async () => {
@@ -79,7 +116,11 @@
           message,
           loading,
           allComment,
-          crawl
+          crawl,
+          autoScrollEnabled,
+          toggleAutoScroll,
+          scrollContainer,
+          scrollSpeed
         };
       }
     }).mount('#app');
